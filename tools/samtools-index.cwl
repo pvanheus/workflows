@@ -3,51 +3,33 @@
 cwlVersion: v1.0
 class: CommandLineTool
 
+hints:
+ - $import: samtools-docker.yml
+
 requirements:
-- $import: envvar-global.yml
-- $import: samtools-docker.yml
-- class: InlineJavascriptRequirement
-  expressionLib:
-  - var new_ext = function() { var ext=inputs.bai?'.bai':inputs.csi?'.csi':'.bai';
-    return inputs.input.path.split('/').slice(-1)[0]+ext; };
+  InitialWorkDirRequirement:
+    listing: [ $(inputs.alignments) ]
+
 inputs:
-  input:
+  alignments:
     type: File
     inputBinding:
       position: 2
+      valueFrom: $(self.basename)
+    label: Input bam file.
 
-    doc: |
-      Input bam file.
-  interval:
-    type: int?
-    inputBinding:
-      position: 1
-      prefix: -m
-    doc: |
-      Set minimum interval size for CSI indices to 2^INT [14]
-  csi:
-    type: boolean
-    default: false
-    doc: |
-      Generate CSI-format index for BAM files
-  bai:
-    type: boolean
-    default: false
-    doc: |
-      Generate BAI-format index for BAM files [default]
+baseCommand: [samtools, index, -b]
+
 outputs:
-  index:
+  alignments_with_index:
     type: File
+    secondaryFiles: .bai
     outputBinding:
-      glob: $(new_ext())
+      glob: $(inputs.alignments.basename)
+
 
     doc: The index file
-baseCommand: [samtools, index]
-arguments:
-- valueFrom: $(inputs.bai?'-b':inputs.csi?'-c':[])
-  position: 1
-- valueFrom: $(new_ext())
-  position: 3
+
 
 $namespaces:
   s: http://schema.org/

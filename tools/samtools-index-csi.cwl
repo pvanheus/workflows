@@ -3,41 +3,39 @@
 cwlVersion: v1.0
 class: CommandLineTool
 
+hints:
+ - $import: samtools-docker.yml
+
 requirements:
-- $import: samtools-docker.yml
-- class: InlineJavascriptRequirement
+  InitialWorkDirRequirement:
+    listing: [ $(inputs.alignments) ]
 
 inputs:
-  single_end:
-    type: boolean
-    default: false
-    doc: |
-      rmdup for SE reads
-  input:
+  alignments:
     type: File
     inputBinding:
       position: 2
-
-    doc: |
-      Input bam file.
-  output_name:
-    type: string
+      valueFrom: $(self.basename)
+    label: Input bam file.
+  interval:
+    type: int?
     inputBinding:
-      position: 3
-
-  pairend_as_se:
-    type: boolean
-    default: false
+      position: 1
+      prefix: -m
     doc: |
-      treat PE reads as SE in rmdup (force -s)
-outputs:
-  rmdup:
-    type: File
-    outputBinding:
-      glob: $(inputs.output_name)
+      Set minimum interval size for CSI indices to 2^INT [14]
 
-    doc: File with removed duplicates
-baseCommand: [samtools, rmdup]
+baseCommand: [samtools, index, -c]
+
+outputs:
+  alignments_with_index:
+    type: File
+    secondaryFiles: cai
+    outputBinding:
+      glob: $(inputs.alignments.basename)
+
+    doc: The index file
+
 $namespaces:
   s: http://schema.org/
 
@@ -47,7 +45,7 @@ $schemas:
 s:mainEntity:
   $import: samtools-metadata.yaml
 
-s:downloadUrl: https://github.com/common-workflow-language/workflows/blob/master/tools/samtools-rmdup.cwl
+s:downloadUrl: https://github.com/common-workflow-language/workflows/blob/master/tools/samtools-index-cai.cwl
 s:codeRepository: https://github.com/common-workflow-language/workflows
 s:license: http://www.apache.org/licenses/LICENSE-2.0
 
@@ -70,5 +68,6 @@ s:author:
     - class: s:Organization
       s:name: Barski Lab
 doc: |
-  samtools-rmdup.cwl is developed for CWL consortium
+  samtools-index.cwl is developed for CWL consortium
+
 
